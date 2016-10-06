@@ -1,16 +1,17 @@
-
-
+#include <Adafruit_TLC59711.h>
 #include <SmartMatrix3.h>
 #include <SPI.h>
 #include <SD.h>
 #include "GIFDecoder.h"
-//#include <Adafruit_NeoPixel.h>
-#include "FastLED.h"
+
+//PWM driver pins
+#define NUM_TLC59711 1
+#define data   15
+#define clock  16
+Adafruit_TLC59711 tlc = Adafruit_TLC59711(NUM_TLC59711, clock, data);
+
 
 #define ENABLE_SCROLLING  1
-#define FLASH_PIN 17
-#define PIXEL_PIN 16
-#define NUM_PIXELS 60
 
 const int defaultBrightness = 255;
 
@@ -22,7 +23,6 @@ const rgb24 COLOR_BLACK = {
 char inChar = ' ';
 long previousMillis = 0;
 long currentMillis = 0;
-long currentInterval = 0;
 int fadeValue = 0;
 
 /* SmartMatrix configuration and memory allocation */
@@ -35,9 +35,6 @@ const uint8_t kPanelType = SMARTMATRIX_HUB75_32ROW_MOD16SCAN; // use SMARTMATRIX
 const uint8_t kMatrixOptions = (SMARTMATRIX_OPTIONS_NONE);    // see http://docs.pixelmatix.com/SmartMatrix for options
 const uint8_t kBackgroundLayerOptions = (SM_BACKGROUND_OPTIONS_NONE);
 const uint8_t kScrollingLayerOptions = (SM_SCROLLING_OPTIONS_NONE);
-
-//Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_PIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
-CRGB leds[NUM_PIXELS];
 
 
 SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth, kDmaBufferRows, kPanelType, kMatrixOptions);
@@ -73,24 +70,18 @@ void setup() {
 
   // Seed the random number generator
   randomSeed(analogRead(14));
-  FastLED.addLeds<NEOPIXEL, PIXEL_PIN>(leds, NUM_PIXELS);
   Serial.begin(115200);
-  pinMode(FLASH_PIN, OUTPUT);
-  digitalWrite(FLASH_PIN, HIGH);
-  // Initialize matrix
+
   matrix.addLayer(&backgroundLayer);
 #if ENABLE_SCROLLING == 1
   matrix.addLayer(&scrollingLayer);
 #endif
 
   matrix.begin();
-//  pixels.begin();
-  setAllPixels(0);
 
   backgroundLayer.fillScreen(COLOR_BLACK);
   backgroundLayer.swapBuffers();
 
-  // initialize the SD card at full speed
   pinMode(SD_CS, OUTPUT);
   if (!SD.begin(SD_CS)) {
 #if ENABLE_SCROLLING == 1
@@ -99,8 +90,6 @@ void setup() {
     Serial.println("No SD card");
     while (1);
   }
-
-  // Determine how many animated GIF files exist
   num_files = enumerateGIFFiles(GIF_DIRECTORY, false);
 
   if (num_files < 0) {
@@ -124,7 +113,6 @@ void setup() {
 
 
 void loop() {
-
   switch (selfieState) {
     case IDLE_STATE: {
         inChar = Serial.read();
@@ -134,25 +122,17 @@ void loop() {
           selfieState = COUNTDOWN_STATE;
           previousMillis = millis();
           processGIFFile("/gifs/3.gif");
-          for (int i = 0; i < NUM_PIXELS; i++) {
-//            pixels.setPixelColor(i, pixels.Color(50, 50, 50));
-              leds[i] = CRGB::Red;
-          }
-//          pixels.show();
-            FastLED.show();
         }
 
         break;
       }
 
     case COUNTDOWN_STATE: {
-        currentInterval = millis() - previousMillis;
-
-
+        currentMillis = millis() - previousMillis;
 
         switch (countdownState) {
           case THREE_STATE: {
-              if (currentInterval >= 1000) {
+              if (currentMillis >= 1000) {
                 countdownState = TWO_STATE;
                 processGIFFile("/gifs/2.gif");
                 previousMillis = millis();
@@ -161,7 +141,7 @@ void loop() {
             }
 
           case TWO_STATE: {
-              if (currentInterval >= 1000) {
+              if (currentMillis >= 1000) {
                 countdownState = ONE_STATE;
                 processGIFFile("/gifs/1.gif");
                 previousMillis = millis();
@@ -170,7 +150,7 @@ void loop() {
             }
 
           case ONE_STATE: {
-              if (currentInterval >= 1000) {
+              if (currentMillis >= 1000) {
                 selfieState = PHOTO_STATE;
                 countdownState = THREE_STATE;
                 processGIFFile("/gifs/smile.gif");
@@ -183,34 +163,23 @@ void loop() {
       }
 
     case PHOTO_STATE: {
-        delay(1000);
-        digitalWrite(FLASH_PIN, LOW);
-        setAllPixels(0);
-        delay(500);
-        digitalWrite(FLASH_PIN, HIGH);
-        //        setAllPixels(50);
 
         delay(500);
         processGIFFile("/gifs/selfie.gif");
-        setAllPixels(0);
         selfieState = IDLE_STATE;
         break;
       }
   }
 
-  delay(5);
 
 }
-
-void setAllPixels(int value) {
-  for (int i = 0; i < NUM_PIXELS; i++) {
-//    pixels.setPixelColor(i, pixels.Color(value, value, value)); // Moderately bright green color.
-      leds[i] = CRGB::White;
+void colorWipe(uint16_t r, uint16_t g, uint16_t b, uint8_t wait) {
+  for (uint16_t i = 0; i < 8 * NUM_TLC59711; i++) {
+    tlc.setLED(i, r, g, b);
+    tlc.write();
+    delay(wait);
   }
-//  pixels.show();
-    FastLED.show();
 }
-
 
 void screenClearCallback(void) {
   backgroundLayer.fillScreen({0, 0, 0});
