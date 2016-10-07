@@ -1,11 +1,11 @@
 #define FOCUS_INPUT_PIN 4
-#define FLASH_INPUT_PIN 3
-#define FLASH_OUTPUT_PIN 13
-#define RING_PIN 11
+#define FLASH_INPUT_PIN 2
+#define FLASH_OUTPUT_PIN 5
+#define RING_PIN 6
 
 boolean focusState = LOW;
 float ringBrightness = 0;
-float fadeSpeed = 0.05;
+float fadeSpeed = 0.02;
 
 enum states {
   IDLE_STATE,
@@ -20,8 +20,10 @@ void setup() {
   pinMode(FOCUS_INPUT_PIN, INPUT);
   pinMode(FLASH_INPUT_PIN, INPUT_PULLUP);
   pinMode(FLASH_OUTPUT_PIN, OUTPUT);
+  pinMode(RING_PIN, OUTPUT);
 
   digitalWrite(FLASH_OUTPUT_PIN, HIGH);
+  digitalWrite(RING_PIN, LOW);
 }
 
 void loop() {
