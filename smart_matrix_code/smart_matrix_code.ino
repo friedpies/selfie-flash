@@ -4,7 +4,7 @@
 #include "GIFDecoder.h"
 
 
-#define ARDUINO_INPUT_PIN 15
+#define ARDUINO_INPUT_PIN 16
 
 #define DISPLAY_TIME_SECONDS 10
 
@@ -58,7 +58,7 @@ enum states {
 enum states selfieState = IDLE_STATE;
 
 void setup() {
-  pinMode(ARDUINO_INPUT_PIN, INPUT);
+  pinMode(ARDUINO_INPUT_PIN, INPUT_PULLUP);
 
 
   setScreenClearCallback(screenClearCallback);
@@ -112,11 +112,9 @@ void setup() {
 void loop() {
   switch (selfieState) {
     case IDLE_STATE: {
-        arduinoInput = digitalRead(ARDUINO_INPUT_PIN);
 
-        if (arduinoInput) {
+        if (digitalRead(ARDUINO_INPUT_PIN) == LOW) {
           selfieState = SMILE_STATE;
-          arduinoInput = LOW;
           previousMillis = millis();
           processGIFFile("/gifs/smile.gif");
         }
@@ -125,7 +123,7 @@ void loop() {
 
     case SMILE_STATE: {
         currentMillis = millis() - previousMillis;
-        if (currentMillis >= 2000) {
+        if (currentMillis > 2000) {
           selfieState = IDLE_STATE;
           processGIFFile("/gifs/SELFIE.gif");
           previousMillis = millis();

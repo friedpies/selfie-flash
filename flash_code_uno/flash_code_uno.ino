@@ -2,7 +2,7 @@
 #define FLASH_INPUT_PIN 2
 #define FLASH_OUTPUT_PIN 5
 #define RING_PIN 6
-#define TEENSY_PIN 7
+#define TEENSY_PIN 8
 
 boolean focusState = LOW;
 float ringBrightness = 0;
@@ -26,7 +26,7 @@ void setup() {
 
   digitalWrite(FLASH_OUTPUT_PIN, HIGH);
   digitalWrite(RING_PIN, LOW);
-  digitalWrite(TEENSY_PIN, LOW);
+  digitalWrite(TEENSY_PIN, HIGH);
 }
 
 void loop() {
@@ -40,12 +40,14 @@ void loop() {
       if (digitalRead(FOCUS_INPUT_PIN)) {
         lightingState = FOCUS_STATE;
         ringBrightness = 0;
+        digitalWrite(TEENSY_PIN, LOW);
+        delay(100);
+        digitalWrite(TEENSY_PIN, HIGH);
       }
 
       break;
 
     case FOCUS_STATE:
-
       analogWrite(RING_PIN, int(ringBrightness));
       ringBrightness += fadeSpeed;
       if (ringBrightness > 255) ringBrightness = 255;
