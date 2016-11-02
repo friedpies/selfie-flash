@@ -2,6 +2,7 @@
 #define FLASH_INPUT_PIN 2
 #define FLASH_OUTPUT_PIN 5
 #define RING_PIN 6
+#define TEENSY_PIN 7
 
 boolean focusState = LOW;
 float ringBrightness = 0;
@@ -21,9 +22,11 @@ void setup() {
   pinMode(FLASH_INPUT_PIN, INPUT_PULLUP);
   pinMode(FLASH_OUTPUT_PIN, OUTPUT);
   pinMode(RING_PIN, OUTPUT);
+  pinMode(TEENSY_PIN, OUTPUT);
 
   digitalWrite(FLASH_OUTPUT_PIN, HIGH);
   digitalWrite(RING_PIN, LOW);
+  digitalWrite(TEENSY_PIN, LOW);
 }
 
 void loop() {

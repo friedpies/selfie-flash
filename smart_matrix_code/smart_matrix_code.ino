@@ -1,15 +1,12 @@
-#include <Adafruit_TLC59711.h>
 #include <SmartMatrix3.h>
 #include <SPI.h>
 #include <SD.h>
 #include "GIFDecoder.h"
 
-//PWM driver pins
-#define NUM_TLC59711 1
-#define data   15
-#define clock  16
-Adafruit_TLC59711 tlc = Adafruit_TLC59711(NUM_TLC59711, clock, data);
 
+#define ARDUINO_INPUT_PIN 15
+
+#define DISPLAY_TIME_SECONDS 10
 
 #define ENABLE_SCROLLING  1
 
@@ -20,7 +17,7 @@ const rgb24 COLOR_BLACK = {
 };
 
 
-char inChar = ' ';
+boolean arduinoInput = LOW;
 long previousMillis = 0;
 long currentMillis = 0;
 int fadeValue = 0;
@@ -50,20 +47,20 @@ SMARTMATRIX_ALLOCATE_SCROLLING_LAYER(scrollingLayer, kMatrixWidth, kMatrixHeight
 
 int num_files;
 
+
+
 enum states {
   IDLE_STATE,
-  COUNTDOWN_STATE,
-  PHOTO_STATE,
-  THREE_STATE,
-  TWO_STATE,
-  ONE_STATE
+  SMILE_STATE
 };
 
 
 enum states selfieState = IDLE_STATE;
-enum states countdownState = THREE_STATE;
 
 void setup() {
+  pinMode(ARDUINO_INPUT_PIN, INPUT);
+
+
   setScreenClearCallback(screenClearCallback);
   setUpdateScreenCallback(updateScreenCallback);
   setDrawPixelCallback(drawPixelCallback);
@@ -115,69 +112,26 @@ void setup() {
 void loop() {
   switch (selfieState) {
     case IDLE_STATE: {
-        inChar = Serial.read();
-        Serial.println(inChar);
+        arduinoInput = digitalRead(ARDUINO_INPUT_PIN);
 
-        if (inChar == 'g') {
-          selfieState = COUNTDOWN_STATE;
+        if (arduinoInput) {
+          selfieState = SMILE_STATE;
+          arduinoInput = LOW;
           previousMillis = millis();
-          processGIFFile("/gifs/3.gif");
+          processGIFFile("/gifs/smile.gif");
         }
-
         break;
       }
 
-    case COUNTDOWN_STATE: {
+    case SMILE_STATE: {
         currentMillis = millis() - previousMillis;
-
-        switch (countdownState) {
-          case THREE_STATE: {
-              if (currentMillis >= 1000) {
-                countdownState = TWO_STATE;
-                processGIFFile("/gifs/2.gif");
-                previousMillis = millis();
-              }
-              break;
-            }
-
-          case TWO_STATE: {
-              if (currentMillis >= 1000) {
-                countdownState = ONE_STATE;
-                processGIFFile("/gifs/1.gif");
-                previousMillis = millis();
-              }
-              break;
-            }
-
-          case ONE_STATE: {
-              if (currentMillis >= 1000) {
-                selfieState = PHOTO_STATE;
-                countdownState = THREE_STATE;
-                processGIFFile("/gifs/smile.gif");
-              }
-              break;
-            }
-
+        if (currentMillis >= 2000) {
+          selfieState = IDLE_STATE;
+          processGIFFile("/gifs/SELFIE.gif");
+          previousMillis = millis();
         }
         break;
       }
-
-    case PHOTO_STATE: {
-
-        delay(500);
-        processGIFFile("/gifs/selfie.gif");
-        selfieState = IDLE_STATE;
-        break;
-      }
-  }
-
-
-}
-void colorWipe(uint16_t r, uint16_t g, uint16_t b, uint8_t wait) {
-  for (uint16_t i = 0; i < 8 * NUM_TLC59711; i++) {
-    tlc.setLED(i, r, g, b);
-    tlc.write();
-    delay(wait);
   }
 }
 
