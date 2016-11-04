@@ -5,6 +5,7 @@
 #define TEENSY_PIN 8
 
 boolean focusState = LOW;
+int lampBrightness = 175;
 float ringBrightness = 0;
 float fadeSpeed = 0.02;
 
@@ -24,15 +25,12 @@ void setup() {
   pinMode(RING_PIN, OUTPUT);
   pinMode(TEENSY_PIN, OUTPUT);
 
-  digitalWrite(FLASH_OUTPUT_PIN, HIGH);
+  analogWrite(FLASH_OUTPUT_PIN, lampBrightness);
   digitalWrite(RING_PIN, LOW);
   digitalWrite(TEENSY_PIN, HIGH);
 }
 
 void loop() {
-  Serial.println(lightingState);
-
-
   switch (lightingState) {
 
     case IDLE_STATE:
@@ -66,9 +64,9 @@ void loop() {
     case FLASH_STATE:
       delay(100); // wait until camera is finished taking photo
       analogWrite(RING_PIN, 0);
-      digitalWrite(FLASH_OUTPUT_PIN, LOW);
+      analogWrite(FLASH_OUTPUT_PIN, 0);
       delay(400);
-      digitalWrite(FLASH_OUTPUT_PIN, HIGH);
+      analogWrite(FLASH_OUTPUT_PIN, lampBrightness);
       lightingState = IDLE_STATE;
       delay(4000); // wait for focus signal to go LOW
       break;

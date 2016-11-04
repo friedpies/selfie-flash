@@ -5,9 +5,7 @@
 
 
 #define ARDUINO_INPUT_PIN 16
-
 #define DISPLAY_TIME_SECONDS 10
-
 #define ENABLE_SCROLLING  1
 
 const int defaultBrightness = 255;
@@ -21,6 +19,7 @@ boolean arduinoInput = LOW;
 long previousMillis = 0;
 long currentMillis = 0;
 int fadeValue = 0;
+long smileScreenDuration = 4000;
 
 /* SmartMatrix configuration and memory allocation */
 #define COLOR_DEPTH 24                  // known working: 24, 48 - If the sketch uses type `rgb24` directly, COLOR_DEPTH must be 24
@@ -123,7 +122,7 @@ void loop() {
 
     case SMILE_STATE: {
         currentMillis = millis() - previousMillis;
-        if (currentMillis > 2000) {
+        if (currentMillis > smileScreenDuration) {
           selfieState = IDLE_STATE;
           processGIFFile("/gifs/SELFIE.gif");
           previousMillis = millis();
